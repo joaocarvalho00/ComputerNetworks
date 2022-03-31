@@ -5,6 +5,11 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -78,71 +83,86 @@ int main(int argc, char** argv)
 
     int i=0;
     int state=0;
-    unsigned char a;
+    unsigned char char_read;
     while (1) 
     {                 
-      if(state==5){
+      if(state==5)
+      {
         printf("STOP\n");
         break;
-        }                    
-            /* loop for input */
-      res = read(fd,&a,1);
-      printf("a= %d \n",a);
-      if(state==0 && a==FLAG){
+      }                    
+         
+      res = read(fd,&char_read,1);
+      printf("char_read= %d \n",char_read);
+      
+      
+
+
+      /* ----------------------------------------------------------- */ 
+      /* ---------------------- STATE MACHINE ---------------------- */
+      /* ----------------------------------------------------------- */        
+
+      if(state==0 && char_read==FLAG){
         state=1;
         printf("State 0-1\n");
       }
-      else if(state==0 && a!=FLAG){
+      else if(state==0 && char_read!=FLAG){
         state=0;
         printf("State 0-0\n");
       }
-      else if(state==1 && a==A_3){
+      else if(state==1 && char_read==A_3){
         state=2;
         printf("State 1-2\n");
       }
-      else if(state==1 && a==FLAG){
+      else if(state==1 && char_read==FLAG){
         state=1;
         printf("State 1-1\n");
       }
-      else if(state==1 && a!=FLAG && a!=A_3){
+      else if(state==1 && char_read!=FLAG && char_read!=A_3){
         state=0;
         printf("State 1-0\n");
       }
-      else if(state==2 && a==FLAG){
+      else if(state==2 && char_read==FLAG){
         state=1;
         printf("State 2-1\n");
       }
-      else if(state==2 && a==C){
+      else if(state==2 && char_read==C){
         state=3;
         printf("State 2-3\n");
       }
-      else if(state==2 && a!=FLAG && a!=C){
+      else if(state==2 && char_read!=FLAG && char_read!=C){
         state=0;
         printf("State 2-0\n");
       }
-      else if(state==3 && a==FLAG){
+      else if(state==3 && char_read==FLAG){
         state=1;
         printf("State 3-1\n");
       }
-      else if(state==3 && a==BCC_3){
+      else if(state==3 && char_read==BCC_3){
         state=4;
         printf("State 3-4\n");
       }
-      else if(state==3 && a!=FLAG && a!=BCC_3){
+      else if(state==3 && char_read!=FLAG && char_read!=BCC_3){
         state=0;
         printf("State 3-0\n");
       }
-      else if(state==4 && a==FLAG){
+      else if(state==4 && char_read==FLAG){
         state=5;
         printf("State 4-5\n");
       }
-      else if(state==4 && a!=FLAG){
+      else if(state==4 && char_read!=FLAG){
         state=0;
         printf("State 4-0\n");
       }
-    //buf[i]=a;
-    //i++;
     }
+
+
+
+
+    /* ----------------------------------------------------------- */ 
+    /* ---------------------- STATE MACHINE ---------------------- */
+    /* ----------------------------------------------------------- */         
+
       printf("Recebi, vou enviar!\n");
 
       buf[0]= FLAG;
@@ -155,7 +175,7 @@ int main(int argc, char** argv)
     res = write(fd,buf,5);   
     printf("%d bytes written\n", res);
   
-
+    
 
 
     sleep(1);
