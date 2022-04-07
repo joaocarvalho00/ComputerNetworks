@@ -206,7 +206,7 @@ int llopen(linkLayer connectionParameters)
           /*---------------------------------------------------------------------*/
         }
 
-    } else if(connectionParameters.role == TRANSMITTER)
+    } else if(connectionParameters.role == RECEIVER)
     {
         int i=0;
         int state=0;
