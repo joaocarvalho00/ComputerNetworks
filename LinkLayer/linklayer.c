@@ -15,18 +15,28 @@
 #define FALSE 0
 #define TRUE 1
 #define FLAG 0x7E
+#define ESC 0x7D
+
 #define A_3 0x03
 #define A_1 0x01
-#define C 0x03
-#define BCC_3 A_3^C
-#define BCC_1 A_1^C
+#define SET 0x03
+#define DISC 0x0B
+#define UA 0x07
+#define RR0 0x01
+#define RR1 0x21
+#define REJ1 0x25
+#define REJ0 0x05
+#define C0 0x00
+#define C1 0x02
+
 
 // Opens a conection using the "port" parameters defined in struct linkLayer, returns "-1" on error and "1" on sucess
 
 volatile int STOP=FALSE;
-int timeoutCounter = 0, flag = 0, fd;
+int timeoutCounter = 0, flag = 0, fd, R = 1, S=0,FrameSize;
 int MaxTimeout, TimeoutTime;
-unsigned char buf[5];
+unsigned char *frame;
+int destuffedbits=0;
 struct termios oldtio,newtio;
 
 void atende()                   // atende alarme
@@ -39,14 +49,16 @@ void atende()                   // atende alarme
             perror("tcsetattr");
             exit(-1);
         }
+        flag = 0;
+        timeoutCounter =0;
         close(fd);
     } else
     if(flag == 0)
     {
-        timeoutCounter++;
+      timeoutCounter++;
 	    printf("TIMEOUT # %d\n", timeoutCounter);
 	    alarm(TimeoutTime);
-	    int res2 = write(fd,buf,5);   
+	    int res2 = write(fd,frame,5);   
         //printf("%d bytes written\n", res2);
 	}
 }
@@ -107,14 +119,14 @@ int llopen(linkLayer connectionParameters)
     if(connectionParameters.role == TRANSMITTER)
     {
         (void) signal(SIGALRM, atende);
-        
-        buf[0] = FLAG;
-        buf[1] = A_3;
-        buf[2] = C;
-        buf[3] = BCC_3;
-        buf[4] = FLAG;
-      
-        res = write(fd,buf,5);   
+        frame = (unsigned char*)calloc(5,sizeof(unsigned char));
+        frame[0] = FLAG;
+        frame[1] = A_3;
+        frame[2] = SET;
+        frame[3] = A_3^SET;
+        frame[4] = FLAG;
+        FrameSize = 5;
+        res = write(fd,frame,FrameSize);   
         printf("%d bytes written\n", res);
         
      
@@ -140,7 +152,10 @@ int llopen(linkLayer connectionParameters)
           }
           
           flag = 1;
-
+          if(res == 0)
+          {
+            continue;
+          }
             
           /*---------------------------------------------------------------------*/
           /*-----------------------------STATE MACHINE---------------------------*/
@@ -154,6 +169,8 @@ int llopen(linkLayer connectionParameters)
           else if(state==0 && char_read!=FLAG){
             state=0;
             printf("State 0-0\n");
+            flag = 0;
+            alarm(TimeoutTime);
           }
           else if(state==1 && char_read==A_1){
             state=2;
@@ -162,34 +179,41 @@ int llopen(linkLayer connectionParameters)
           else if(state==1 && char_read==FLAG){
             state=1;
             printf("State 1-1\n");
+            
           }
           else if(state==1 && char_read!=FLAG && char_read!=A_1){
             state=0;
             printf("State 1-0\n");
+            flag = 0;
+            alarm(TimeoutTime);
           }
           else if(state==2 && char_read==FLAG){
             state=1;
             printf("State 2-1\n");
           }
-          else if(state==2 && char_read==C){
+          else if(state==2 && char_read==UA){
             state=3;
             printf("State 2-3\n");
           }
-          else if(state==2 && char_read!=FLAG && char_read!=C){
+          else if(state==2 && char_read!=FLAG && char_read!=UA){
             state=0;
             printf("State 2-0\n");
+            flag = 0;
+            alarm(TimeoutTime);
           }
           else if(state==3 && char_read==FLAG){
             state=1;
             printf("State 3-1\n");
           }
-          else if(state==3 && char_read==BCC_1){
+          else if(state==3 && char_read==A_1^UA){
             state=4;
             printf("State 3-4\n");
           }
-          else if(state==3 && char_read!=FLAG && char_read!=BCC_1){
+          else if(state==3 && char_read!=FLAG && char_read!=A_1^UA){
             state=0;
             printf("State 3-0\n");
+            flag = 0;
+            alarm(TimeoutTime);
           }
           else if(state==4 && char_read==FLAG){
             state=5;
@@ -199,13 +223,15 @@ int llopen(linkLayer connectionParameters)
           else if(state==4 && char_read!=FLAG){
             state=0;
             printf("State 4-0\n");
+            flag = 0;
+            alarm(TimeoutTime);
           }
           
           /*---------------------------------------------------------------------*/
           /*-----------------------------STATE MACHINE---------------------------*/
           /*---------------------------------------------------------------------*/
         }
-
+        free(frame);
     } else if(connectionParameters.role == RECEIVER)
     {
         int i=0;
@@ -253,11 +279,11 @@ int llopen(linkLayer connectionParameters)
             state=1;
             printf("State 2-1\n");
           }
-          else if(state==2 && char_read==C){
+          else if(state==2 && char_read==SET){
             state=3;
             printf("State 2-3\n");
           }
-          else if(state==2 && char_read!=FLAG && char_read!=C){
+          else if(state==2 && char_read!=FLAG && char_read!=SET){
             state=0;
             printf("State 2-0\n");
           }
@@ -265,11 +291,11 @@ int llopen(linkLayer connectionParameters)
             state=1;
             printf("State 3-1\n");
           }
-          else if(state==3 && char_read==BCC_3){
+          else if(state==3 && char_read==A_3^SET){
             state=4;
             printf("State 3-4\n");
           }
-          else if(state==3 && char_read!=FLAG && char_read!=BCC_3){
+          else if(state==3 && char_read!=FLAG && char_read!=A_3^SET){
             state=0;
             printf("State 3-0\n");
           }
@@ -291,16 +317,18 @@ int llopen(linkLayer connectionParameters)
         /* ----------------------------------------------------------- */         
 
           printf("Recebi, vou enviar!\n");
-
-          buf[0]= FLAG;
-          buf[1]= A_1;
-          buf[2]= C; 
-          buf[3]= BCC_1;
-          buf[4] = FLAG;
+          frame = (unsigned char*)calloc(5,sizeof(unsigned char));
+          frame[0]= FLAG;
+          frame[1]= A_1;
+          frame[2]= UA; 
+          frame[3]= A_1^UA;
+          frame[4] = FLAG;
+          FrameSize = 5;
         /*testing*/ 
         
-        res = write(fd,buf,5);   
+        res = write(fd,frame,FrameSize);   
         printf("%d bytes written\n", res);
+        free(frame);
     }
     
 
@@ -309,8 +337,341 @@ int llopen(linkLayer connectionParameters)
       perror("tcsetattr");
       exit(-1);
     }
-
-
+    timeoutCounter =0;
+    flag = 0;
     return fd;
 }
 
+int llwrite(char* buf, int bufSize)
+{
+  //CREATE FRAME
+  unsigned char header[4];
+  header[0]=FLAG;
+  header[1]=A_3;
+  if(S==0)
+  {
+    header[2]=C0;
+  }
+  if(S==1)
+  {
+    header[2]=C1;
+  }
+  header[3] = header[1]^header[2];
+  
+  //Criar o BB2
+  
+  unsigned char BCC2;
+
+  for (int i = 0; i < bufSize; i++)
+  {
+    BCC2 = buf[i]^BCC2;
+  }
+  // Criar o trailer
+  unsigned char *trailer = (unsigned char*)calloc(2,sizeof(unsigned char));
+  int trailerSize = 2;
+  //BYTE STUFFING THING
+  if ( BCC2 == FLAG || BCC2 == ESC)
+  {
+    trailer = (unsigned char*)realloc(trailer,sizeof(unsigned char)*3);
+    trailerSize = 3;
+    trailer[0] = ESC;
+    trailer[1] = BCC2^0x20;
+    trailer[2] = FLAG; 
+  }else
+  {
+    trailer[0] = BCC2;
+    trailer[1] = FLAG; 
+  }
+  // Criar data 
+  unsigned char *data = (unsigned char*)calloc(bufSize,sizeof(unsigned char));
+  int dataSize = bufSize;
+  int j=0;
+  for (int i = 0; i < bufSize; i++)
+  {
+    if ( buf[i] == FLAG || buf[i] == ESC)
+    {
+      dataSize++;
+      data = (unsigned char*)realloc(data,sizeof(unsigned char)*dataSize);
+      data[j] = ESC;
+      data[j+1] = buf[i]^0x20;
+      j++; 
+    }else
+    {
+      data[j] = buf[i];
+    }
+    j++;
+  }
+  frame = (unsigned char*)calloc(4+dataSize+trailerSize,sizeof(unsigned char));
+  FrameSize = 4+dataSize+trailerSize;
+  frame[0] = header[0];
+  frame[1] = header[1];
+  frame[2] = header[2];
+  frame[3] = header[3];
+  for (int i = 0; i < dataSize; i++)
+  {
+    frame[4+i] = data[i];
+  }
+  for (int i = 0; i < trailerSize; i++)
+  {
+    frame[4+dataSize+i] = trailer[i];
+    
+  }
+  printf("%d %d %d %d\n",bufSize,FrameSize,dataSize,trailerSize);
+  for (int i = 0; i < FrameSize; i++)
+  {
+    printf("%d x ", frame[i]);
+    if(i%8==0)
+    {
+      printf("\n");
+    }
+  }
+  tcflush(fd, TCIOFLUSH);
+
+  if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+    perror("tcsetattr");
+    exit(-1);
+  }
+  
+  int res = write(fd,frame,FrameSize);   
+  printf("%d bytes written\n", res);
+  free(data);
+  free(trailer);
+  int written = res;
+  unsigned char char_read;
+  //(void) signal(SIGALRM, atende);
+  int state = 0;
+
+  //alarm(TimeoutTime);
+  while (1) 
+  {                 
+            
+    if(state==5){
+      printf("STOP\n");
+      break;
+    }
+    if((res = read(fd,&char_read,1)) == -1)
+    {
+      printf("CONNECTION FAILED\n");
+      return -1;
+    }
+    if(res == 0)
+    {
+      continue;
+    }
+    flag = 1;
+    
+
+      
+    /*---------------------------------------------------------------------*/
+    /*-----------------------------STATE MACHINE---------------------------*/
+    /*---------------------------------------------------------------------*/
+    
+    //printf("char_read= %d \n",char_read);
+    if(state==0 && char_read==FLAG){
+      state=1;
+      printf("State 0-1\n");
+    }
+    else if(state==0 && char_read!=FLAG){
+      state=0;
+      //printf("State 0-0\n");
+      //flag = 0;
+      //alarm(TimeoutTime);
+    }
+    else if(state==1 && char_read==A_1){
+      state=2;
+      printf("State 1-2\n");
+    }
+    else if(state==1 && char_read==FLAG){
+      state=1;
+      printf("State 1-1\n");
+      
+    }
+    else if(state==1 && char_read!=FLAG && char_read!=A_1){
+      state=0;
+      printf("State 1-0\n");
+      //flag = 0;
+      //alarm(TimeoutTime);
+    }
+    else if(state==2 && char_read==FLAG){
+      state=1;
+      //printf("State 2-1\n");
+    }
+    else if(state==2 && ((char_read==RR1 && S==0)||(char_read==RR0 && S==1))) {
+      state=3;
+      printf("State 2-3\n");
+    }
+    else if(state==2 && char_read!=FLAG && ((char_read!=RR1 && S==0)||(char_read!=RR0 && S==1))){
+      state=0;
+      printf("State 2-0\n");
+      //flag = 0;
+      //alarm(TimeoutTime);
+    }
+    else if(state==3 && char_read==FLAG){
+      state=1;
+      printf("State 3-1\n");
+    }
+    else if(state==3 && ((char_read==RR1^A_1 && S==0)||(char_read==RR0^A_1 && S==1)) ){
+      state=4;
+      printf("State 3-4\n");
+    }
+    else if(state==3 && char_read!=FLAG && ((char_read!=RR1^A_1 && S==0)||(char_read!=RR0^A_1 && S==1)) ){
+      state=0;
+      printf("State 3-0\n");
+      //flag = 0;
+      //alarm(TimeoutTime);
+    }
+    else if(state==4 && char_read==FLAG){
+      state=5;
+      printf("State 4-5\n");
+      
+    }
+    else if(state==4 && char_read!=FLAG){
+      state=0;
+      printf("State 4-0\n");
+      //flag = 0;
+      //alarm(TimeoutTime);
+    }
+    /*---------------------------------------------------------------------*/
+    /*-----------------------------STATE MACHINE---------------------------*/
+  } /*---------------------------------------------------------------------*/
+  
+  if(S==0)
+  {
+    S=1;
+  }else
+  {
+    S=0;
+  }
+  if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+    perror("tcsetattr");
+    exit(-1);
+  }
+  free(frame);
+  timeoutCounter =0;
+  flag = 0;
+  return written;
+}
+// Receive data in packet
+int llread(char* packet)
+{
+  printf("GONNA READ");
+  int flagcount=0;
+  unsigned char char_read;
+  int res;
+  frame = (unsigned char*)calloc(0,sizeof(unsigned char));
+  FrameSize =0;
+
+  tcflush(fd, TCIOFLUSH);
+
+  if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+    perror("tcsetattr");
+    exit(-1);
+  }
+
+  while(1)
+  {
+    //printf("flagcoubt = %d\n",flagcount);
+    if((res = read(fd,&char_read,1)) == -1)
+    {
+      printf("CONNECTION FAILED\n");
+      return -1;
+    }
+    if(res == 0)
+    {
+      continue;
+    }
+
+    if(char_read==FLAG)
+    {
+      flagcount++;
+    }
+    if(flagcount==2)
+    {
+      FrameSize++;
+      frame = (unsigned char*)realloc(frame,sizeof(unsigned char)*FrameSize);
+      frame[FrameSize-1] = char_read;
+      break;
+    }
+    if(flagcount == 1)
+    {
+      printf("char_read= %d \n",char_read);
+      FrameSize++;
+      frame = (unsigned char*)realloc(frame,sizeof(unsigned char)*FrameSize);
+      frame[FrameSize-1] = char_read;
+    }
+    
+  }
+  printf("%d READ\n",FrameSize);
+  unsigned char* destuffedframe = (unsigned char*)calloc(1,sizeof(unsigned char));
+  destuffedframe[0] = frame[0];
+  int destuffedframeSZ = 1;
+  for (int i = 1; i < FrameSize-1; i++)  
+  {
+    destuffedframeSZ++;
+    destuffedframe = (unsigned char*)realloc(frame,sizeof(unsigned char)*destuffedframeSZ);
+    if(frame[i]==ESC)
+    {
+      if(frame[i+1]==FLAG^0x20)
+      {
+        destuffedframe[destuffedframeSZ-1] = FLAG;
+        destuffedbits++;
+      }
+      if(frame[i+1]==ESC^0x20)
+      {
+        destuffedframe[destuffedframeSZ-1] = ESC;
+        destuffedbits++;
+      }
+      i++;
+    }else
+    {
+      destuffedframe[destuffedframeSZ-1] = frame[i];
+    }
+  }
+  destuffedframeSZ++;
+  destuffedframe = (unsigned char*)realloc(frame,sizeof(unsigned char)*destuffedframeSZ);
+  destuffedframe[destuffedframeSZ-1] = frame[FrameSize-1];
+  ///Deconstruct frame
+
+  int dataSZ= destuffedframeSZ-4-2;
+  unsigned char *data = (unsigned char*)calloc(dataSZ,sizeof(unsigned char));
+
+  for (int i = 4; i < destuffedframeSZ-2; i++)
+  {
+    data[i-4] = destuffedframe[i];
+  }
+  unsigned char BCC2;
+  for (int i = 0; i < dataSZ; i++)
+  {
+    BCC2 = data[i]^BCC2;
+  }
+
+  unsigned char header[5]; 
+
+  header[0]=FLAG;
+  header[1]=A_1;
+  if(R==0)
+  {
+    header[2]=RR0;
+  }
+  if(R==1)
+  {
+    header[2]=RR1;
+  }
+  header[3]=header[1]^header[2];
+  res = write(fd,header,5);   
+  printf("%d bytes written\n", res);
+  for (int i = 0; i < dataSZ; i++)
+  {
+    packet[i]=data[i];
+  }
+  if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+    perror("tcsetattr");
+    exit(-1);
+  }
+  
+  return destuffedframeSZ;
+
+}
+
+// Closes previously opened connection; if showStatistics==TRUE, link layer should print statistics in the console on close
+//int llclose(int showStatistics);
