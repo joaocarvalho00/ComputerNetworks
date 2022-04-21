@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 		unsigned char buffer[buf_size+1];
 		int write_result = 0;
 		int bytes_read = 1;
-		/*while (bytes_read > 0)
+		while (bytes_read > 0)
 		{
 			bytes_read = read(file_desc, buffer+1, buf_size);
                         if(bytes_read < 0) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
                         }
 
 			sleep(1);
-		}*/
+		}
     		// close connection
 		//llclose(1);
     		close(file_desc);
@@ -104,28 +104,32 @@ int main(int argc, char *argv[]) {
                 ll.baudRate = 9600;
                 ll.numTries = 3;
                 ll.timeOut = 3;
-
+				printf("1\n");
                 if(llopen(ll)==-1) {
                         fprintf(stderr, "Could not initialize link layer connection\n");
                         exit(1);
                 }
-
+				printf("2\n");
                 char *file_path = argv[3];
+				printf("3\n");
                 int file_desc = open(file_path, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+				printf("4\n");
 		if(file_desc < 0) {
                         fprintf(stderr, "Error opening file: %s\n", file_path);
                         exit(1);
                 }
-		
+		printf("5\n");
 		int bytes_read = 0;
 		int write_result = 0;
                 const int buf_size = MAX_PAYLOAD_SIZE;
                 unsigned char buffer[buf_size];
                 int total_bytes = 0;
 
-		/*while (bytes_read >= 0)
+		while (bytes_read >= 0)
 		{
+			printf("6\n");
 	        	bytes_read = llread(buffer);
+				printf("7\n");
         		if(bytes_read < 0) {
                 		fprintf(stderr, "Error receiving from link layer\n");
 				break;
@@ -145,7 +149,7 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
-            	}*/
+            	}
 		
                 //llclose(1);
                 close(file_desc);
