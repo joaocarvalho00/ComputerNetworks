@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 			sleep(1);
 		}
     		// close connection
-		//llclose(1);
+		llclose(1);
     		close(file_desc);
     		return 0;
 			
@@ -104,16 +104,12 @@ int main(int argc, char *argv[]) {
                 ll.baudRate = 9600;
                 ll.numTries = 3;
                 ll.timeOut = 3;
-				printf("1\n");
                 if(llopen(ll)==-1) {
                         fprintf(stderr, "Could not initialize link layer connection\n");
                         exit(1);
                 }
-				printf("2\n");
                 char *file_path = argv[3];
-				printf("3\n");
                 int file_desc = open(file_path, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-				printf("4\n");
 		if(file_desc < 0) {
                         fprintf(stderr, "Error opening file: %s\n", file_path);
                         exit(1);
@@ -127,9 +123,7 @@ int main(int argc, char *argv[]) {
 
 		while (bytes_read >= 0)
 		{
-			printf("6\n");
 	        	bytes_read = llread(buffer);
-				printf("7\n");
         		if(bytes_read < 0) {
                 		fprintf(stderr, "Error receiving from link layer\n");
 				break;
@@ -151,7 +145,7 @@ int main(int argc, char *argv[]) {
 			}
             	}
 		
-                //llclose(1);
+                llclose(1);
                 close(file_desc);
                 return 0;
 
