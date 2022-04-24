@@ -731,6 +731,7 @@ int llread(char* packet)
       rej =0;
       frame = (unsigned char*)calloc(0,sizeof(unsigned char));
       FrameSize =0;
+      state = 0;
       continue;
     }
     if(repeat==1)
@@ -755,6 +756,7 @@ int llread(char* packet)
       repeat =0;
       frame = (unsigned char*)calloc(0,sizeof(unsigned char));
       FrameSize =0;
+      state = 0;
       continue;
     }
     printf("%d READ\n",FrameSize);
@@ -820,6 +822,7 @@ int llread(char* packet)
       printf("%d bytes written\n", res);
       frame = (unsigned char*)calloc(0,sizeof(unsigned char));
       FrameSize =0;
+      state = 0;
       continue;
     }
     else{break;}
