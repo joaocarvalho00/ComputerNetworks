@@ -219,6 +219,10 @@ int main(int argc, char *argv[])
     urlpath[index] = '\n';
     urlpath[index+1] = '\0';
 
+
+    printf("Host name  : %s\n", host);
+    printf("IP Address : %s",urlpath);
+
     if ((h=gethostbyname(host)) == NULL) 
     {  
         herror("gethostbyname");
@@ -353,19 +357,27 @@ int main(int argc, char *argv[])
 			filename = calloc(MAX_STRING_SIZE,sizeof(char));
 			index = 0;
 		}
-		else{
+        else if (urlpath[i] == '\n')
+        {
+            break;
+        }
+		else
+        {
 			filename[index] = urlpath[i];
 			index++;
 		}
 	}
-    //printf("%s\n", filename);
+    printf("%s\n", filename);
     FILE *f;
     f = fopen(filename,"w");
     index = 0;
-    while((index=read(sockfd_client,&recv_char,1))){
-		fprintf(f,"%c", recv_char);
+    char *recv_file = calloc(MAX_STRING_SIZE,sizeof(char));
+    while((index=read(sockfd_client,recv_file,MAX_STRING_SIZE))){
+		fprintf(f,"%s", recv_file);
 	}
 
+    free(recv_file);
+    free(filename);
 	fclose(f);
 	close(sockfd);
 	close(sockfd_client);
