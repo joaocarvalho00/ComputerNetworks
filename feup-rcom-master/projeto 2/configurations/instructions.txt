@@ -1,0 +1,89 @@
+
+
+switch:
+enable
+password:8nortel
+configure terminal
+no vlan 2-4094
+exit
+copy flash:carlosluisdavid.txt startup-config
+reload
+
+tux 1:
+ifconfig eth0 172.16.20.1/24
+
+tux 2:
+ifconfig eth0 172.16.21.1/24
+
+tux 4:
+ifconfig eth0 172.16.20.254/24
+ifconfig eth0 172.16.21.253/24
+
+
+switch:
+enable
+8nortel
+configure terminal
+vlan 20
+exit
+vlan 21
+exit
+exit
+wr
+
+
+TUX 1 adicionar rota:
+       >> route add -net 172.16.21.0/24 gw 172.16.20.254
+       >> route -n
+
+TUX 2 adicionar rota:
+        >> route add -net 172.16.20.0/24 gw 172.16.21.253
+        >> route -n
+
+tux4 - echo 1 > /proc/sys/net/ipv4/ip_forward
+
+
+config router
+
+
+mudar cabo do switch console para router console
+
+>>>>> copy flash:carlosluisdavid.txt startup-config
+reload
+
+
+
+
+
+
+
+
+
+
+
+
+CONFIGURACAO ROUTER QUE ESTA NO FICHEIRO GUARDADO
+gtkTerm:
+username: root
+pass: 8nortel
+conf t
+interface gigabitethernet 0/0
+ip address 172.16.21.254 255.255.255.0
+no shutdown
+ip nat inside
+exit
+
+interface gigabitethernet 0/1
+ip address 172.16.1.29 255.255.255.0
+no shutdown
+ip nat inside
+exit
+
+ip nat pool ovrld 172.16.1.29 172.16.1.29 prefix 24
+ip nat inside source list 1 pool vorld overload
+acess-list 1 permit 172.16.20.0 0.0.0.7
+acess-list 1 permit 172.16.21.0 0.0.0.7
+
+ip route 0.0.0.0 0.0.0.0 172.16.1.254
+ip route 172.16.20.0 255.255.255.0 172.16.21.253
+end

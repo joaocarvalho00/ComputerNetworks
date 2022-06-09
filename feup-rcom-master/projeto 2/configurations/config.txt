@@ -1,0 +1,153 @@
+hostname tux-sw2
+!
+boot-start-marker
+boot-end-marker
+!
+enable secret 5 $1$m1av$iEtCTJhcwb4Jy1CeS58Lx1
+!
+username root privilege 15 secret 5 $1$mqd/$//c8zeA7D1vsDOE8meaVc0
+!
+!
+no aaa new-model
+system mtu routing 1500
+vtp file vtpconfig
+!
+!         
+!
+!
+
+!
+!
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+!
+vlan internal allocation policy ascending
+!
+!
+!
+!
+interface FastEthernet0/1
+ switchport access vlan 20
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/2
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/3
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/4
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/5
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/6
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/7
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/8
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/9
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/10
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/11
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/12
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/13
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/14
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/15
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/16
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/17
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/18
+ switchport mode access
+ spanning-tree portfast
+!         
+interface FastEthernet0/19
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/20
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/21
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/22
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/23
+ switchport mode access
+ spanning-tree portfast
+!
+interface FastEthernet0/24
+ switchport mode access
+ spanning-tree portfast
+!
+interface GigabitEthernet0/1
+!
+interface GigabitEthernet0/2
+!
+interface Vlan1
+ ip address 172.16.1.20 255.255.255.0
+ no ip route-cache
+ no ip mroute-cache
+!
+ip classless
+ip http server
+ip http secure-server
+!
+!
+ip sla enable reaction-alerts
+!
+!
+!
+line con 0
+line vty 0 4
+ privilege level 15
+ password 7 014B080B491F0303
+ login
+line vty 5 15
+ login
+!
+end

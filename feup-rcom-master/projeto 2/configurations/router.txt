@@ -1,0 +1,133 @@
+Building configuration...
+
+Current configuration : 3414 bytes
+!
+! Last configuration change at 18:24:49 UTC Fri Dec 1 2017 by root
+!
+version 15.0
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+!
+hostname tux-rtr2
+!
+boot-start-marker
+boot-end-marker
+!
+logging buffered 51200 warnings
+!
+no aaa new-model
+!
+no ipv6 cef
+ip source-route
+ip cef
+!
+!         
+!         
+!         
+no ip domain lookup
+multilink bundle-name authenticated
+!         
+!         
+!         
+crypto pki trustpoint TP-self-signed-4152825460
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-4152825460
+ revocation-check none
+ rsakeypair TP-self-signed-4152825460
+!         
+!         
+crypto pki certificate chain TP-self-signed-4152825460
+ certificate self-signed 01
+  30820240 308201A9 A0030201 02020101 300D0609 2A864886 F70D0101 04050030 
+  31312F30 2D060355 04031326 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 34313532 38323534 3630301E 170D3137 31323031 31363138 
+  35305A17 0D323030 31303130 30303030 305A3031 312F302D 06035504 03132649 
+  4F532D53 656C662D 5369676E 65642D43 65727469 66696361 74652D34 31353238 
+  32353436 3030819F 300D0609 2A864886 F70D0101 01050003 818D0030 81890281 
+  8100DEF8 47ED9152 667A3520 053AD57F 57C88437 48900602 FD0D759C 471F054D 
+  F87D10E6 9E659273 7D0CAC61 71BAED89 C1096EAF 56ED67D6 A9EFE441 C40C5CE7 
+  7BED5348 1DFA24CD FF7EF71D 263BA171 F2737163 AEF5674C D926CE67 7666E24C 
+  0E536643 13FE221A 89CE4465 0E88DC70 9B764DDA 5C6714B8 687F591D B2E3B65A 
+  B9A90203 010001A3 68306630 0F060355 1D130101 FF040530 030101FF 30130603 
+  551D1104 0C300A82 08747578 2D727472 32301F06 03551D23 04183016 80141DE6 
+  F362B658 C4BFEDB2 21F529FF A62536D3 5F26301D 0603551D 0E041604 141DE6F3 
+  62B658C4 BFEDB221 F529FFA6 2536D35F 26300D06 092A8648 86F70D01 01040500 
+  03818100 488FF947 7003406A FA813D11 9CEF46D4 B8FB859C 4AE15127 2A53ABA3 
+  6E5C25B4 72C17E7E 93243F39 EEEA338D BAECB4D4 47EB1B3B 4337A6ED D7CC81BD 
+  F07A9877 A5D6B694 B5C1E3E6 73E20B92 557311BF AABFEAAB B7775808 5ACA48DE 
+  D5DAFE34 0AFC470B 4BAA57DB 775F798F E28665C0 BA970E30 02578336 299D0936 799B444E
+        quit
+license udi pid CISCO2901/K9 sn FCZ1415C11Q
+!         
+!         
+username root privilege 15 secret 5 $1$Drb7$uzCfOIfg1SuIqY9daK.lV1
+!         
+!         
+!         
+!         
+!         
+!         
+interface GigabitEthernet0/0
+ description $ETH-LAN$$ETH-SW-LAUNCH$$INTF-INFO-GE 0/0$
+ ip address 172.16.21.254 255.255.255.0
+ ip nat inside
+ ip virtual-reassembly
+ duplex auto
+ speed auto
+!         
+interface GigabitEthernet0/1
+ ip address 172.16.1.29 255.255.255.0
+ ip nat outside
+ ip virtual-reassembly
+ duplex auto
+ speed auto
+!         
+interface Serial0/0/0
+ no ip address
+ shutdown 
+ clock rate 2000000
+!         
+interface Serial0/0/1
+ no ip address
+ shutdown 
+ no clock rate 2000000
+!         
+ip forward-protocol nd
+!         
+ip http server
+ip http access-class 23
+ip http authentication local
+ip http secure-server
+ip http timeout-policy idle 60 life 86400 requests 10000
+!         
+ip nat pool ovrld 172.16.1.29 172.16.1.29 prefix-length 24
+ip nat inside source list 1 pool ovrld overload
+ip route 0.0.0.0 0.0.0.0 172.16.1.254
+ip route 172.16.20.0 255.255.255.0 172.16.21.253
+!         
+access-list 1 permit 172.16.20.0 0.0.0.7
+access-list 1 permit 172.16.21.0 0.0.0.7
+access-list 23 permit 10.10.10.0 0.0.0.7
+!         
+!         
+!         
+control-plane
+!         
+!         
+line con 0
+ login local
+line aux 0
+line vty 0 4
+ access-class 23 in
+ privilege level 15
+ login local
+ transport input telnet ssh
+line vty 5 15
+ access-class 23 in
+ privilege level 15
+ login local
+ transport input telnet ssh
+!         
+scheduler allocate 20000 1000
+end  

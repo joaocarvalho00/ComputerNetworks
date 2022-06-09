@@ -1,0 +1,49 @@
+Ligacoes
+
+tux21e0 - sw1
+tux22e0 - sw9
+tux24e0 - sw5
+tux24e1 - sw13
+routerge0/0 - sw17
+2.1-routerge0/1
+2.12 - cabo que vem detras(porta serie)
+tux21s0 - t3
+sw/router console - t4 
+
+
+mac4 - 00:22:64:a6:a4:f1 , ifconfig eth0 172.16.20.254/24
+mac1 - 00:0f:fe:8c:af:9d , ifconfig eth0 172.16.20.1/24
+
+//Update aula 2
+mac2 - 00:21:5a:61:2b:72 , ifconfig eth0 172.16.21.1/24
+ma4 - 00:08:54:50:3f:2c , ifconfig eth1 172.16.21.253/24
+
+//Portas usadas
+tux1 - porta E0 , porta 1(switch) (VLAN 20)
+
+tux2 - porta E0 . porta 9(switch) (VLAN 21)
+
+tux4 - porta E0 , porta 5(switch) (VLAN 20)
+       porta E1 , porta 13(switch) (VLAN 21)
+
+router cisco - Router GE0/0
+               porta 17 (VLAN 21)
+
+
+TUX 1 adicionar rota:
+       >> route add -net 172.16.21.0/24 gw 172.16.20.254
+       >> route add default gw 172.16.20.254
+       >> route -n
+
+TUX 2 adicionar rota:
+       >> route add -net 172.16.20.0/24 gw 172.16.21.253
+       >> route add default gw 172.16.21.253
+       >> route -n
+       
+ligacao 1 para 2
+
+tux2 - echo 1 > /proc/sys/net/ipv4/ip_forward
+
+172.16.1.29 -> endereço externo do router cisco
+
+172.16.21.254 -> endereço interno do router cisco
